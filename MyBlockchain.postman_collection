@@ -1,0 +1,79 @@
+{
+	"variables": [],
+	"info": {
+		"name": "MyBlockchain",
+		"_postman_id": "f5354be6-cca2-0cb1-3e6e-fb2b43c8a29b",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Node1",
+			"description": "",
+			"item": [
+				{
+					"name": "Get Blockchain",
+					"request": {
+						"url": "{{host}}/blocks",
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Mint New Block",
+					"request": {
+						"url": "{{host}}/mintBlock",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Get Peers",
+					"request": {
+						"url": "{{host}}/peers",
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Add Peer",
+					"request": {
+						"url": "{{host}}/peers",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"peer\" : \"ws:localhost:6002\"\n}"
+						},
+						"description": ""
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
