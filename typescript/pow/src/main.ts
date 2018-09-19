@@ -1,7 +1,9 @@
 import * as P2P from './p2p'
 import  express from 'express'
 
-import {getBlockchain, generateNextBlock, Block} from './blockchain'
+import {getBlockchain, generateNextBlock, Block, generatenextBlockWithTransaction, getAccountBalance} from './blockchain'
+import {initWallet} from './wallet';
+
 
 const p2pPort: number = parseInt(process.env.P2P_PORT) || 6001;
 const httpPort: number = parseInt(process.env.HTTP_PORT) || 3001;
@@ -9,6 +11,7 @@ const httpPort: number = parseInt(process.env.HTTP_PORT) || 3001;
 
 const initHttpServer = (myHttpPort : number) => {
     const app: express.Application = express();
+
     app.use(express.json())
 
     app.use((err, req, res, next) => {
@@ -21,8 +24,13 @@ const initHttpServer = (myHttpPort : number) => {
         res.send(getBlockchain())
     })
 
+    app.get('/balance', (req, res) => {
+        const balance: number = getAccountBalance();
+        res.send({'balance': balance});
+    });
+
     app.post('/mintBlock', (req, res) => {
-        const newBlock : Block = generateNextBlock("");
+        const newBlock : Block = generateNextBlock();
         res.send(newBlock)
     })
 
@@ -37,6 +45,18 @@ const initHttpServer = (myHttpPort : number) => {
         res.send('done')
     })
 
+    app.post('/mineTransaction', (req, res) => {
+        const address = req.body.address;
+        const amount = req.body.amount;
+        try {
+            const resp = generatenextBlockWithTransaction(address, amount);
+            res.send(resp);
+        } catch (e) {
+            console.log(e.message);
+            res.status(400).send(e.message);
+        }
+    });
+
     app.listen(myHttpPort, () => {
         console.log('Listening http on port: ' + myHttpPort);
     })
@@ -45,3 +65,4 @@ const initHttpServer = (myHttpPort : number) => {
 
 P2P.initP2PServer(p2pPort)
 initHttpServer(httpPort);
+initWallet();

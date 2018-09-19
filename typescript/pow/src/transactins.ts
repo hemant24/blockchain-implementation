@@ -1,6 +1,7 @@
 import * as CryptoJS from 'crypto-js';
 import * as ecdsa from 'elliptic';
-import * as _ from 'lodash'
+let _ = require("lodash");
+
 
 const ec = new ecdsa.ec('secp256k1');
 
@@ -11,6 +12,7 @@ class UnspentTxOut {
     public readonly txOutIndex: number;
     public readonly amount: number;
     public readonly address: string;
+
 
 
     constructor(txOutId: string, txOutIndex: number, address: string, amount: number) {
@@ -328,4 +330,23 @@ const hasDuplicates = (txIns: TxIn[]): boolean => {
             }
         })
         .includes(true);
+};
+
+const processTransactions = (aTransactions: Transaction[], aUnspentTxOuts: UnspentTxOut[], blockIndex: number) => {
+
+    if (!isValidTransactionsStructure(aTransactions)) {
+        return null;
+    }
+
+    if (!validateBlockTransactions(aTransactions, aUnspentTxOuts, blockIndex)) {
+        console.log('invalid block transactions');
+        return null;
+    }
+    return updateUnspentTxOuts(aTransactions, aUnspentTxOuts);
+};
+
+export {
+    processTransactions, signTxIn, getTransactionId, isValidAddress,
+    UnspentTxOut, TxIn, TxOut, getCoinbaseTransaction, getPublicKey,
+    Transaction
 };

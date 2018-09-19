@@ -10,6 +10,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const CryptoJS = __importStar(require("crypto-js"));
 const p2p_1 = require("./p2p");
 const utils_1 = require("./utils");
+const transactins_1 = require("./transactins");
+const wallet_1 = require("./wallet");
 class Block {
     /*
     public index : number;
@@ -29,9 +31,14 @@ class Block {
     }
 }
 exports.Block = Block;
-const genesisBlock = new Block(0, '98afd75b978eb70696d9bbbb99211efa535208c8520b62331a2d007571c3b072', '', 1465154705, "my first block", 0, 0);
+const genesisBlock = new Block(0, '98afd75b978eb70696d9bbbb99211efa535208c8520b62331a2d007571c3b072', '', 1465154705, [], 0, 0);
 const BLOCK_GENERATION_INTERVAL = 10;
 const DIFFICULTY_ADJUSTMENT_INTERVAL = 10;
+let unspentTxOuts = [];
+const getAccountBalance = () => {
+    return wallet_1.getBalance(wallet_1.getPublicFromWallet(), unspentTxOuts);
+};
+exports.getAccountBalance = getAccountBalance;
 const getDifficulty = (aBlockchain) => {
     const latestBlock = aBlockchain[aBlockchain.length - 1];
     if (latestBlock.index % DIFFICULTY_ADJUSTMENT_INTERVAL === 0 && latestBlock.index !== 0) {
@@ -63,7 +70,7 @@ const getAdjustedDifficulty = (aBlockchain) => {
         previousAdjustedBlock.difficulty;
     }
 };
-const generateNextBlock = (data) => {
+const generateRawNextBlock = (data) => {
     const previousBlock = getLastestBlock();
     const nextIndex = previousBlock.index + 1;
     const nextTimestamp = getCurrentTimestamp();
@@ -74,7 +81,25 @@ const generateNextBlock = (data) => {
     }
     return block;
 };
+const generateNextBlock = () => {
+    const coinbaseTx = transactins_1.getCoinbaseTransaction(wallet_1.getPublicFromWallet(), getLastestBlock().index + 1);
+    const blockData = [coinbaseTx];
+    return generateRawNextBlock(blockData);
+};
 exports.generateNextBlock = generateNextBlock;
+const generatenextBlockWithTransaction = (receiverAddress, amount) => {
+    if (!transactins_1.isValidAddress(receiverAddress)) {
+        throw Error('invalid address');
+    }
+    if (typeof amount !== 'number') {
+        throw Error('invalid amount');
+    }
+    const coinbaseTx = transactins_1.getCoinbaseTransaction(wallet_1.getPublicFromWallet(), getLastestBlock().index + 1);
+    const tx = wallet_1.createTransaction(receiverAddress, amount, wallet_1.getPrivateFromWallet(), unspentTxOuts);
+    const blockData = [coinbaseTx, tx];
+    return generateRawNextBlock(blockData);
+};
+exports.generatenextBlockWithTransaction = generatenextBlockWithTransaction;
 const findBlock = (index, previousHash, timestamp, data, difficulty) => {
     let nonce = 0;
     while (true) {
@@ -97,8 +122,15 @@ const hashMatchesDifficulty = (hash, difficulty) => {
 };
 const addBlockToBlockchain = (block) => {
     if (isValidNewBlock(block, getLastestBlock())) {
-        blockchain.push(block);
-        return true;
+        const retVal = transactins_1.processTransactions(block.data, unspentTxOuts, block.index);
+        if (retVal === null) {
+            return false;
+        }
+        else {
+            blockchain.push(block);
+            unspentTxOuts = retVal;
+            return true;
+        }
     }
     return false;
 };
